@@ -209,8 +209,226 @@ class Net_8(nn.Module):
         summary(model, input_size)
 #---------------------------------------------------------------------------------------------------------------------------------------
 # Session 8 Models
-#---------------------------------------------------------------------------------------------------------------------------------------
 
+# Batch Normalization ------------------------------------------------------------------------------------------------------------------
+
+dropout_value = 0.1
+class BN_Net(nn.Module):
+    def __init__(self):
+        super(BN_Net, self).__init__()
+        # Input Block - CONVOLUTION BLOCK 1
+        self.C1 = nn.Sequential(
+            nn.Conv2d(in_channels=3, out_channels=32, kernel_size=(3, 3), padding=0, bias=False),
+            nn.ReLU(),
+            nn.BatchNorm2d(32),
+            nn.Dropout(dropout_value)
+        ) # output_size = 30
+
+        # CONVOLUTION BLOCK 2
+        self.C2 = nn.Sequential(
+            nn.Conv2d(in_channels=32, out_channels=32, kernel_size=(3, 3), padding=0, bias=False),
+            nn.ReLU(),
+            nn.BatchNorm2d(32),
+            nn.Dropout(dropout_value)
+        ) # output_size = 28
+
+        # TRANSITION BLOCK 1 - CONVOLUTION BLOCK 3
+        self.c3 = nn.Sequential(
+            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(1, 1), padding=0, bias=False),
+        ) # output_size = 28
+        self.P1 = nn.MaxPool2d(2, 2) # output_size = 14
+
+        # CONVOLUTION BLOCK 4
+        self.C4 = nn.Sequential(
+            nn.Conv2d(in_channels=64, out_channels=32, kernel_size=(3, 3), padding=0, bias=False),
+            nn.ReLU(),            
+            nn.BatchNorm2d(32),
+            nn.Dropout(dropout_value)
+        ) # output_size = 12
+
+        # CONVOLUTION BLOCK 5
+        self.C5 = nn.Sequential(
+            nn.Conv2d(in_channels=32, out_channels=16, kernel_size=(3, 3), padding=0, bias=False),
+            nn.ReLU(),            
+            nn.BatchNorm2d(16),
+            nn.Dropout(dropout_value)
+        ) # output_size = 10
+
+        # TRANSITION BLOCK 2 - CONVOLUTION BLOCK 6
+        self.c6 = nn.Sequential(
+            nn.Conv2d(in_channels=16, out_channels=16, kernel_size=(1, 1), padding=0, bias=False),
+        ) # output_size = 10
+        self.P2 = nn.MaxPool2d(2, 2) # output_size = 5
+        
+        # CONVOLUTION BLOCK 7
+        self.C7 = nn.Sequential(
+            nn.Conv2d(in_channels=16, out_channels=16, kernel_size=(3, 3), padding=0, bias=False),
+            nn.ReLU(),            
+            nn.BatchNorm2d(16),
+            nn.Dropout(dropout_value)
+        ) # output_size = 3
+
+        # CONVOLUTION BLOCK 8
+        self.C8 = nn.Sequential(
+            nn.Conv2d(in_channels=16, out_channels=16, kernel_size=(3, 3), padding=1, bias=False),
+            nn.ReLU(),            
+            nn.BatchNorm2d(16),
+            nn.Dropout(dropout_value)
+        ) # output_size = 1
+                
+        # CONVOLUTION BLOCK 9
+        self.C9 = nn.Sequential(
+            nn.Conv2d(in_channels=16, out_channels=16, kernel_size=(3, 3), padding=1, bias=False),
+            nn.ReLU(),            
+            nn.BatchNorm2d(16),
+            nn.Dropout(dropout_value)
+        ) # output_size = 1
+        
+        # OUTPUT BLOCK
+        self.GAP = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1)
+        ) # output_size = 1
+
+        self.C10 = nn.Sequential(
+            nn.Conv2d(in_channels=16, out_channels=10, kernel_size=(1, 1), padding=0, bias=False),
+            # nn.BatchNorm2d(10),
+            # nn.ReLU(),
+            # nn.Dropout(dropout_value)
+        ) 
+
+        self.dropout = nn.Dropout(dropout_value)
+
+    def forward(self, x):
+        x = self.C1(x)
+        x = self.C2(x)
+        x = self.c3(x)
+        x = self.P1(x)
+        x = self.C4(x)
+        x = self.C5(x)
+        x = self.c6(x)
+        x = self.P2(x)
+        x = self.C7(x)
+        x = self.C8(x)
+        x = self.C9(x)
+        x = self.GAP(x)        
+        x = self.C10(x)
+
+        x = x.view(-1, 10)
+        return F.log_softmax(x, dim=-1)
+
+    def model_summary(model, input_size):
+    summary(model, input_size)
+    
+# Group Normalisation ---------------------------------------------------------------------------------------------------------------------------------------
+dropout_value = 0.1
+num_groups = 4
+
+class GN_Net(nn.Module):
+    def __init__(self):
+        super(GN_Net, self).__init__()
+        # Input Block - CONVOLUTION BLOCK 1
+        self.C1 = nn.Sequential(
+            nn.Conv2d(in_channels=3, out_channels=32, kernel_size=(3, 3), padding=0, bias=False),
+            nn.ReLU(),
+            nn.GroupNorm(num_groups, 32),
+            nn.Dropout(dropout_value)
+        ) # output_size = 30
+
+        # CONVOLUTION BLOCK 2
+        self.C2 = nn.Sequential(
+            nn.Conv2d(in_channels=32, out_channels=32, kernel_size=(3, 3), padding=0, bias=False),
+            nn.ReLU(),
+            nn.GroupNorm(num_groups, 32),
+            nn.Dropout(dropout_value)
+        ) # output_size = 28
+
+        # TRANSITION BLOCK 1 - CONVOLUTION BLOCK 3
+        self.c3 = nn.Sequential(
+            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(1, 1), padding=0, bias=False),
+        ) # output_size = 28
+        self.P1 = nn.MaxPool2d(2, 2) # output_size = 14
+
+        # CONVOLUTION BLOCK 4
+        self.C4 = nn.Sequential(
+            nn.Conv2d(in_channels=64, out_channels=32, kernel_size=(3, 3), padding=0, bias=False),
+            nn.ReLU(),
+            nn.GroupNorm(num_groups, 32),
+            nn.Dropout(dropout_value)
+        ) # output_size = 12
+
+        # CONVOLUTION BLOCK 5
+        self.C5 = nn.Sequential(
+            nn.Conv2d(in_channels=32, out_channels=16, kernel_size=(3, 3), padding=0, bias=False),
+            nn.ReLU(),
+            nn.GroupNorm(num_groups, 16),
+            nn.Dropout(dropout_value)
+        ) # output_size = 10
+
+        # TRANSITION BLOCK 2 - CONVOLUTION BLOCK 6
+        self.c6 = nn.Sequential(
+            nn.Conv2d(in_channels=16, out_channels=16, kernel_size=(1, 1), padding=0, bias=False),
+        ) # output_size = 10
+        self.P2 = nn.MaxPool2d(2, 2) # output_size = 5
+
+        # CONVOLUTION BLOCK 7
+        self.C7 = nn.Sequential(
+            nn.Conv2d(in_channels=16, out_channels=16, kernel_size=(3, 3), padding=0, bias=False),
+            nn.ReLU(),
+            nn.GroupNorm(num_groups, 16),
+            nn.Dropout(dropout_value)
+        ) # output_size = 3
+
+        # CONVOLUTION BLOCK 8
+        self.C8 = nn.Sequential(
+            nn.Conv2d(in_channels=16, out_channels=16, kernel_size=(3, 3), padding=1, bias=False),
+            nn.ReLU(),
+            nn.GroupNorm(num_groups, 16),
+            nn.Dropout(dropout_value)
+        ) # output_size = 1
+
+        # CONVOLUTION BLOCK 9
+        self.C9 = nn.Sequential(
+            nn.Conv2d(in_channels=16, out_channels=16, kernel_size=(3, 3), padding=1, bias=False),
+            nn.ReLU(),
+            nn.GroupNorm(num_groups, 16),
+            nn.Dropout(dropout_value)
+        ) # output_size = 1
+
+        # OUTPUT BLOCK
+        self.GAP = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1)
+        ) # output_size = 1
+
+        self.C10 = nn.Sequential(
+            nn.Conv2d(in_channels=16, out_channels=10, kernel_size=(1, 1), padding=0, bias=False),
+            # nn.BatchNorm2d(10),
+            # nn.ReLU(),
+            # nn.Dropout(dropout_value)
+        )
+
+
+        self.dropout = nn.Dropout(dropout_value)
+
+    def forward(self, x):
+        x = self.C1(x)
+        x = self.C2(x)
+        x = self.c3(x)
+        x = self.P1(x)
+        x = self.C4(x)
+        x = self.C5(x)
+        x = self.c6(x)
+        x = self.P2(x)
+        x = self.C7(x)
+        x = self.C8(x)
+        x = self.C9(x)
+        x = self.GAP(x)
+        x = self.C10(x)
+
+        x = x.view(-1, 10)
+        return F.log_softmax(x, dim=-1)
+
+    def model_summary(model, input_size):
+    summary(model, input_size)
 #---------------------------------------------------------------------------------------------------------------------------------------
 #Train and Test
 
